@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AURA DOWNLOADER - Premium Video Extractor</title>
+    <style>
+        :root { --primary: #00d2ff; --dark: #0f0c29; --glass: rgba(255, 255, 255, 0.1); }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: linear-gradient(to right, #0f0c29, #302b63, #24243e); color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .container { width: 90%; max-width: 800px; text-align: center; }
+        .logo span { color: var(--primary); }
+        .downloader-box { background: var(--glass); backdrop-filter: blur(10px); padding: 2rem; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 15px 35px rgba(0,0,0,0.5); }
+        .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        input { flex: 1; padding: 15px; border-radius: 10px; border: none; background: rgba(0,0,0,0.3); color: white; font-size: 16px; outline: none; }
+        button { padding: 15px 30px; border-radius: 10px; border: none; background: var(--primary); color: #000; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        button:hover { transform: scale(1.05); }
+        .hidden { display: none; }
+        .video-info img { width: 100%; max-width: 300px; border-radius: 10px; margin-bottom: 15px; }
+        .options-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 20px; }
+        .dl-btn { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; text-decoration: none; color: var(--primary); border: 1px solid var(--primary); font-size: 14px; transition: 0.3s; }
+        .dl-btn:hover { background: var(--primary); color: #000; }
+        .spinner { border: 4px solid rgba(255,255,255,0.1); border-left-color: var(--primary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 10px auto; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1 class="logo">AURA <span>DOWNLOADER</span></h1>
+            <p>Paste video link to download (YT, FB, IG, TikTok)</p>
+        </header>
+        <main class="downloader-box">
+            <div class="input-group">
+                <input type="text" id="videoUrl" placeholder="Paste your link here...">
+                <button id="fetchBtn">Fetch</button>
+            </div>
+            <div id="loader" class="hidden">
+                <div class="spinner"></div>
+                <p>Aura is fetching media...</p>
+            </div>
+            <div id="result" class="hidden">
+                <div class="video-info">
+                    <img id="thumb" src="" alt="Thumbnail">
+                    <h3 id="videoTitle"></h3>
+                    <p id="duration"></p>
+                </div>
+                <div id="downloadOptions" class="options-grid"></div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.getElementById('fetchBtn').addEventListener('click', async () => {
+            const url = document.getElementById('videoUrl').value;
+            const loader = document.getElementById('loader');
+            const result = document.getElementById('result');
+            const optionsGrid = document.getElementById('downloadOptions');
+
+            if (!url) return alert("Please paste a URL!");
+            loader.classList.remove('hidden');
+            result.classList.add('hidden');
+            optionsGrid.innerHTML = '';
+
+            try {
+                const response = await fetch('/api/fetch-video', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('thumb').src = data.thumbnail;
+                    document.getElementById('videoTitle').innerText = data.title;
+                    document.getElementById('duration').innerText = "Duration: " + data.duration;
+                    data.formats.forEach(f => {
+                        const btn = document.createElement('a');
+                        btn.href = f.url;
+                        btn.target = "_blank";
+                        btn.className = 'dl-btn';
+                        btn.innerHTML = `${f.resolution} (${f.ext})<br><small>${f.filesize}</small>`;
+                        optionsGrid.appendChild(btn);
+                    });
+                    result.classList.remove('hidden');
+                } else { alert(data.error); }
+            } catch (err) { alert("Error fetching video!"); }
+            finally { loader.classList.add('hidden'); }
+        });
+    </script>
+</body>
+</html>

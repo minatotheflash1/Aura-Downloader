@@ -1,0 +1,35 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              Int      @id @default(autoincrement())
+  username        String   @unique
+  password        String
+  role            String   @default("Free") // Free, Silver, Gold, Diamond, Owner
+  daily_limit     Int      @default(5)
+  total_downloads Int      @default(0)
+  joined_date     DateTime @default(now())
+  is_banned       Boolean  @default(false)
+}
+
+model RedeemCode {
+  id           Int      @id @default(autoincrement())
+  code         String   @unique
+  role_reward  String
+  limit_reward Int      @default(0)
+  is_used      Boolean  @default(false)
+}
+
+model Transaction {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  trx_id     String   @unique
+  status     String   @default("Pending") // Pending, Approved, Rejected
+  created_at DateTime @default(now())
+}
